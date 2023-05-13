@@ -1,0 +1,21 @@
+{
+  "name": "xparsejax",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "cd xparsejax && node ../node_modules/mathjax-full/components/bin/pack"
+  },
+  "author": "Lucas V. Reis",
+  "license": "AGPL",
+  "devDependencies": {
+    "@babel/core": "^7.21.8",
+    "@babel/preset-env": "^7.21.5",
+    "babel-loader": "^9.1.2",
+    "terser-webpack-plugin": "^5.3.8",
+    "webpack": "^5.82.1",
+    "webpack-cli": "^5.1.1"
+  },
+  "dependencies": {
+      "mathjax-full": "^3.2.0"
+  }
+}
