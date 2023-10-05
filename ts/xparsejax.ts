@@ -194,6 +194,6 @@ new CommandMap(XPARSEMAP, {
   IfNoValueF: ['ifNoValue', 'f'],
 }, xparseMethods);
 
-Configuration.create(
+export const configuration = Configuration.create(
   'xparse', { handler: { macro: [XPARSEMAP] } }
 );
