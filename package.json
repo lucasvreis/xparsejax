@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "cd xparsejax && node ../node_modules/mathjax-full/components/bin/pack"
+    "build": "npx tsc; ./node_modules/mathjax-full/components/bin/makeAll components"
   },
   "author": "Lucas V. Reis",
   "license": "AGPL",

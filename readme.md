@@ -19,16 +19,16 @@ Note that `NewDocumentEnviroment` is not implemented but should not be hard to d
 
 ## Usage
 
-There is a packed minified version under [`build`](build). You can serve it under your website (say, at `/path/to/xparsejax.js`) and load it in your MathJax configuration like so:
+There is a packed minified version under [`browser`](browser). You can serve it under your website (say, at `/path/to/xparsejax.js`) and load it in your MathJax configuration like so:
 
 ```js
 MathJax = {
   loader: {
-    load: ['[custom]/xparsejax.js'],
-    paths: {custom: '/path/to'} // specify your path here
+    load: ['[xparsejax]/xparsejax.js'],
+    paths: {xparsejax: '/path/to'} // specify your path here
   },
   tex: {
-    packages: {'[+]': ['xparse']},
+    packages: {'[+]': ['xparsejax']},
   },
   [... other stuff ...]
 }
