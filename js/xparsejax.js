@@ -149,5 +149,5 @@ new CommandMap(XPARSEMAP, {
     IfNoValueT: ['ifNoValue', 't'],
     IfNoValueF: ['ifNoValue', 'f'],
 }, xparseMethods);
-Configuration.create('xparse', { handler: { macro: [XPARSEMAP] } });
+export const configuration = Configuration.create('xparse', { handler: { macro: [XPARSEMAP] } });
 //# sourceMappingURL=xparsejax.js.map
