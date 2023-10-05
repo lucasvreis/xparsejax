@@ -1,12 +1,35 @@
-import {Configuration}  from '../node_modules/mathjax-full/js/input/tex/Configuration.js';
-import {CommandMap} from '../node_modules/mathjax-full/js/input/tex/SymbolMap.js';
-import {Macro} from '../node_modules/mathjax-full/js/input/tex/Symbol.js';
-import TexError from '../node_modules/mathjax-full/js/input/tex/TexError.js';
-import ParseUtil from '../node_modules/mathjax-full/js/input/tex/ParseUtil.js';
+
+import { Configuration } from 'mathjax-full/mjs/input/tex/Configuration.js';
+import { CommandMap } from 'mathjax-full/mjs/input/tex/TokenMap.js';
+import { Macro } from 'mathjax-full/mjs/input/tex/Token.js';
+import { ParseMethod } from 'mathjax-full/mjs/input/tex/Types.js';
+import TexError from 'mathjax-full/mjs/input/tex/TexError.js';
+import TexParser from 'mathjax-full/mjs/input/tex/TexParser.js';
+import ParseUtil from 'mathjax-full/mjs/input/tex/ParseUtil.js';
 
 const XPARSEMAP = 'xparseCmdMap';
 
-const DocumentCommand = (parser, name, macro, argSpec) => {
+let xparseMethods: Record<string, ParseMethod> = {};
+
+interface SimpleArg {
+  type: 'm' | 'o' | 's'
+}
+
+interface OptionalDefaultArg {
+  type: 'O',
+  default: string
+}
+
+interface TokenArg {
+  type: 't',
+  token: string
+}
+
+type Arg = SimpleArg | OptionalDefaultArg | TokenArg
+
+type ArgSpec = Arg[]
+
+const DocumentCommand = (macro: string, argSpec: ArgSpec) => (parser: TexParser, name: string) => {
   const args = [];
 
   if (argSpec.length) {
@@ -42,8 +65,6 @@ const DocumentCommand = (parser, name, macro, argSpec) => {
           );
           break;
         }
-        default:
-          throw new TexError('NotImplemented', 'Argument type \'' + arg.type + '\' not yet implemented!');
       }
     }
     macro = ParseUtil.substituteArgs(parser, args, macro);
@@ -53,24 +74,24 @@ const DocumentCommand = (parser, name, macro, argSpec) => {
   ParseUtil.checkMaxMacros(parser);
 };
 
-function GetCsNameArgument(parser, name) {
+function GetCsNameArgument(parser: TexParser, name: string) {
   let cs = ParseUtil.trimSpaces(parser.GetArgument(name));
   if (cs.charAt(0) === '\\') {
-    cs = cs.substr(1);
+    cs = cs.substring(1);
   }
   if (!cs.match(/^(.|[a-z]+)$/i)) {
     throw new TexError('IllegalControlSequenceName',
-                       'First argument of \'%1\' must be a command.', parser.currentCS);
+      'First argument of \'%1\' must be a command.', parser.currentCS);
   }
   return cs;
 }
 
-function GetArgumentSpec(parser) {
+function GetArgumentSpec(parser: TexParser): ArgSpec {
   const spec = [];
   switch (parser.GetNext()) {
     case '}':
       throw new TexError('ExtraCloseMissingOpen',
-                         'Extra close brace or missing open brace');
+        'Extra close brace or missing open brace');
     case '{':
       parser.i++;
       while (parser.i < parser.string.length) {
@@ -83,15 +104,15 @@ function GetArgumentSpec(parser) {
           case 'o':
           case 'O': {
             const def = parser.GetArgument('O');
-            spec.push({type: c, default: def});
+            spec.push({ type: c, default: def });
             break;
           }
           case 's':
-            spec.push({type: c});
+            spec.push({ type: c });
             break;
           case 't': {
             const tok = parser.GetArgument('t');
-            spec.push({type: c, token: tok});
+            spec.push({ type: c, token: tok });
             break;
           }
           case '}':
@@ -114,6 +135,52 @@ function GetArgumentSpec(parser) {
   }
 }
 
+xparseMethods.documentCmd = function (parser: TexParser, name: string) {
+  const cs = GetCsNameArgument(parser, name);
+  const argSpec = GetArgumentSpec(parser);
+  const def = parser.GetArgument(name);
+
+  const handlers = parser.configuration.handlers;
+  const handler = handlers.retrieve(XPARSEMAP) as CommandMap;
+  handler.add(cs, new Macro(cs, DocumentCommand(def, argSpec)));
+}
+
+xparseMethods.ifBoolean = function (parser: TexParser, name: string, mode: string) {
+  const cs = ParseUtil.trimSpaces(parser.GetArgument(name));
+  const yes = parser.GetArgument(name);
+  const no = mode === 'tf' ? parser.GetArgument(name) : '';
+  const choice = (() => {
+    switch (cs) {
+      case '\\BooleanTrue':
+        return !(mode === 'f');
+      case '\\BooleanFalse':
+        return mode === 'f';
+      default:
+        throw new TexError('InvalidArgument', 'Invalid argument ' + cs + ' to ' + parser.currentCS);
+    }
+  })();
+  parser.string = ParseUtil.addArgs(parser, choice ? yes : no, parser.string.slice(parser.i));
+  parser.i = 0;
+  ParseUtil.checkMaxMacros(parser);
+}
+
+xparseMethods.ifNoValue = function (parser: TexParser, name: string, mode: string) {
+  const cs = ParseUtil.trimSpaces(parser.GetArgument(name));
+  const yes = parser.GetArgument(name);
+  const no = mode === 'tf' ? parser.GetArgument(name) : '';
+  const choice = (() => {
+    switch (cs) {
+      case '-NoValue-':
+        return !(mode === 'f');
+      default:
+        return mode === 'f';
+    }
+  })();
+  parser.string = ParseUtil.addArgs(parser, choice ? yes : no, parser.string.slice(parser.i));
+  parser.i = 0;
+  ParseUtil.checkMaxMacros(parser);
+}
+
 new CommandMap(XPARSEMAP, {
   NewDocumentCommand: ['documentCmd', 'new'],
   RenewDocumentCommand: ['documentCmd', 'renew'],
@@ -125,52 +192,8 @@ new CommandMap(XPARSEMAP, {
   IfNoValueTF: ['ifNoValue', 'tf'],
   IfNoValueT: ['ifNoValue', 't'],
   IfNoValueF: ['ifNoValue', 'f'],
-}, {
-  documentCmd(parser, name, _type) {
-    const cs = GetCsNameArgument(parser, name);
-    const argSpec = GetArgumentSpec(parser);
-    const def = parser.GetArgument(name);
-
-    const handlers = parser.configuration.handlers;
-    const handler = handlers.retrieve(XPARSEMAP);
-    handler.add(cs, new Macro(cs, DocumentCommand, [def, argSpec]));
-  },
-  ifBoolean(parser, name, mode) {
-    const cs = ParseUtil.trimSpaces(parser.GetArgument(name));
-    const yes = parser.GetArgument(name);
-    const no = mode === 'tf' ? parser.GetArgument(name) : '';
-    const choice = (() => {
-      switch (cs) {
-        case '\\BooleanTrue':
-          return !(mode === 'f');
-        case '\\BooleanFalse':
-          return mode === 'f';
-        default:
-          throw new TexError('InvalidArgument', 'Invalid argument ' + cs + ' to ' + parser.currentCS);
-      }
-    })();
-    parser.string = ParseUtil.addArgs(parser, choice ? yes : no, parser.string.slice(parser.i));
-    parser.i = 0;
-    ParseUtil.checkMaxMacros(parser);
-  },
-  ifNoValue(parser, name, mode) {
-    const cs = ParseUtil.trimSpaces(parser.GetArgument(name));
-    const yes = parser.GetArgument(name);
-    const no = mode === 'tf' ? parser.GetArgument(name) : '';
-    const choice = (() => {
-      switch (cs) {
-        case '-NoValue-':
-          return !(mode === 'f');
-        default:
-          return mode === 'f';
-      }
-    })();
-    parser.string = ParseUtil.addArgs(parser, choice ? yes : no, parser.string.slice(parser.i));
-    parser.i = 0;
-    ParseUtil.checkMaxMacros(parser);
-  }
-});
+}, xparseMethods);
 
 Configuration.create(
-   'xparse', {handler: {macro: [XPARSEMAP]}}
+  'xparse', { handler: { macro: [XPARSEMAP] } }
 );

@@ -1,0 +1,18 @@
+{
+  "build": {
+    "id": "[xparse]/xparsejax",
+    "component": "input/tex/extension/xparsejax",
+    "js": "../js",
+    "ts": "../ts",
+    "targets": ["xparsejax.ts"]
+  },
+  "webpack": {
+    "name": "xparsejax",
+    "js": "../js",
+    "libs": [
+      "components/src/core/lib",
+      "components/src/input/tex-base/lib"
+    ],
+    "dist": "../browser/"
+  }
+}
