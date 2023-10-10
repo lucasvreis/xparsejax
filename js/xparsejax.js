@@ -5,9 +5,10 @@ import TexError from 'mathjax-full/mjs/input/tex/TexError.js';
 import ParseUtil from 'mathjax-full/mjs/input/tex/ParseUtil.js';
 const XPARSEMAP = 'xparseCmdMap';
 let xparseMethods = {};
-const DocumentCommand = (macro, argSpec) => (parser, name) => {
-    const args = [];
+const DocumentCommand = (parser, name, macro, argSpec_) => {
+    const argSpec = JSON.parse(argSpec_);
     if (argSpec.length) {
+        const args = [];
         for (const arg of argSpec) {
             switch (arg.type) {
                 case 'm':
@@ -101,7 +102,7 @@ xparseMethods.documentCmd = function (parser, name) {
     const def = parser.GetArgument(name);
     const handlers = parser.configuration.handlers;
     const handler = handlers.retrieve(XPARSEMAP);
-    handler.add(cs, new Macro(cs, DocumentCommand(def, argSpec)));
+    handler.add(cs, new Macro(cs, DocumentCommand, [def, JSON.stringify(argSpec)]));
 };
 xparseMethods.ifBoolean = function (parser, name, mode) {
     const cs = ParseUtil.trimSpaces(parser.GetArgument(name));

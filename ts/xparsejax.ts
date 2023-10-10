@@ -29,10 +29,10 @@ type Arg = SimpleArg | OptionalDefaultArg | TokenArg
 
 type ArgSpec = Arg[]
 
-const DocumentCommand = (macro: string, argSpec: ArgSpec) => (parser: TexParser, name: string) => {
-  const args = [];
-
+const DocumentCommand = (parser: TexParser, name: string, macro: string, argSpec_: string) => {
+  const argSpec = JSON.parse(argSpec_);
   if (argSpec.length) {
+    const args: string[] = [];
     for (const arg of argSpec) {
       switch (arg.type) {
         case 'm':
@@ -142,7 +142,7 @@ xparseMethods.documentCmd = function (parser: TexParser, name: string) {
 
   const handlers = parser.configuration.handlers;
   const handler = handlers.retrieve(XPARSEMAP) as CommandMap;
-  handler.add(cs, new Macro(cs, DocumentCommand(def, argSpec)));
+  handler.add(cs, new Macro(cs, DocumentCommand, [def, JSON.stringify(argSpec)]));
 }
 
 xparseMethods.ifBoolean = function (parser: TexParser, name: string, mode: string) {
