@@ -5,7 +5,8 @@ import { Macro } from 'mathjax-full/mjs/input/tex/Token.js';
 import { ParseMethod } from 'mathjax-full/mjs/input/tex/Types.js';
 import TexError from 'mathjax-full/mjs/input/tex/TexError.js';
 import TexParser from 'mathjax-full/mjs/input/tex/TexParser.js';
-import ParseUtil from 'mathjax-full/mjs/input/tex/ParseUtil.js';
+import { ParseUtil } from 'mathjax-full/mjs/input/tex/ParseUtil.js';
+import { UnitUtil } from 'mathjax-full/mjs/input/tex/UnitUtil.js';
 
 const XPARSEMAP = 'xparseCmdMap';
 
@@ -75,7 +76,7 @@ const DocumentCommand = (parser: TexParser, name: string, macro: string, argSpec
 };
 
 function GetCsNameArgument(parser: TexParser, name: string) {
-  let cs = ParseUtil.trimSpaces(parser.GetArgument(name));
+  let cs = UnitUtil.trimSpaces(parser.GetArgument(name));
   if (cs.charAt(0) === '\\') {
     cs = cs.substring(1);
   }
@@ -146,7 +147,7 @@ xparseMethods.documentCmd = function (parser: TexParser, name: string) {
 }
 
 xparseMethods.ifBoolean = function (parser: TexParser, name: string, mode: string) {
-  const cs = ParseUtil.trimSpaces(parser.GetArgument(name));
+  const cs = UnitUtil.trimSpaces(parser.GetArgument(name));
   const yes = parser.GetArgument(name);
   const no = mode === 'tf' ? parser.GetArgument(name) : '';
   const choice = (() => {
@@ -165,7 +166,7 @@ xparseMethods.ifBoolean = function (parser: TexParser, name: string, mode: strin
 }
 
 xparseMethods.ifNoValue = function (parser: TexParser, name: string, mode: string) {
-  const cs = ParseUtil.trimSpaces(parser.GetArgument(name));
+  const cs = UnitUtil.trimSpaces(parser.GetArgument(name));
   const yes = parser.GetArgument(name);
   const no = mode === 'tf' ? parser.GetArgument(name) : '';
   const choice = (() => {

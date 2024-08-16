@@ -34,7 +34,7 @@ MathJax = {
 }
 ```
 
-To compile it yourself, it should suffice to do:
+To compile it yourself, you should have both `node` and `pnpm` installed. Then it should suffice to do:
 ```sh
 cd xparsejax
 npm install
